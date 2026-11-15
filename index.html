@@ -168,9 +168,8 @@
         try { return localStorage.getItem('ef_admin_blocked') === 'true'; } catch { return false; }
       });
 
-      const [inWelcomeScreen, setInWelcomeScreen] = useState(() => {
-        try { return localStorage.getItem('ef_skip_welcome') !== 'true'; } catch { return true; }
-      });
+      // Abre sempre na tela inicial de boas-vindas
+      const [inWelcomeScreen, setInWelcomeScreen] = useState(true);
 
       const [showAdminModal, setShowAdminModal] = useState(false);
       const [adminPass, setAdminPass] = useState('');
@@ -558,10 +557,7 @@
 
             <div className="w-full max-w-sm pb-6">
               <button
-                onClick={() => {
-                  try { localStorage.setItem('ef_skip_welcome', 'true'); } catch (e) {}
-                  setInWelcomeScreen(false);
-                }}
+                onClick={() => setInWelcomeScreen(false)}
                 className="w-full py-4 bg-[#2C422E] text-[#FDFBF7] font-bold rounded-2xl shadow-xl text-base tracking-wide hover:bg-[#384F3B] transition-all cursor-pointer"
               >
                 Acessar Painel 🌸
@@ -778,7 +774,6 @@
         const today = new Date().toISOString().split('T')[0];
         const [form, setForm] = useState({ clientName: '', whatsapp: '', items: '', time: '', sellPrice: '', totalCost: 0, status: 'pendente', date: today });
         
-        // Seleção múltipla de produtos do catálogo
         const [selectedProdId, setSelectedProdId] = useState('');
         const [selectedQty, setSelectedQty] = useState(1);
         const [cartItems, setCartItems] = useState([]);
@@ -908,7 +903,6 @@
                   <input type="tel" placeholder="WhatsApp (opcional)" className="w-full p-3.5 bg-gray-50 border rounded-2xl text-sm outline-none focus:border-[#CFA86A]" value={form.whatsapp} onChange={e => setForm({...form, whatsapp: e.target.value})} />
                 </div>
 
-                {/* Seletor de Produtos Cadastrados + Quantidade */}
                 <div className="bg-[#FDFBF7] p-4 rounded-2xl border border-[#CFA86A]/30 space-y-3">
                   <label className="text-xs font-bold text-[#2C422E] uppercase tracking-wider block">
                     🌸 Escolher Produtos do Catálogo
@@ -954,7 +948,6 @@
                     </div>
                   )}
 
-                  {/* Lista de itens já adicionados ao pedido */}
                   {cartItems.length > 0 && (
                     <div className="space-y-2 pt-1">
                       {cartItems.map(item => (
