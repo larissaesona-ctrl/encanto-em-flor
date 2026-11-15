@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Encanto em Flor — Gestão Premium</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts (Playfair Display + Plus Jakarta Sans) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- React & Babel (Arquivo Único Sem Build) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #F9F6F0;
+      color: #1F2937;
+      -webkit-tap-highlight-color: transparent;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #F9F6F0; }
+    ::-webkit-scrollbar-thumb { background: #CFA86A; border-radius: 9999px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Firebase Modular SDK (v10) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { 
+      getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, onSnapshot 
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCXr987Rx8LPZMeDFXLqNQeMRultC5tdFk",
+      authDomain: "encanto-em-flor.firebaseapp.com",
+      projectId: "encanto-em-flor",
+      storageBucket: "encanto-em-flor.firebasestorage.app",
+      messagingSenderId: "362167801007",
+      appId: "1:362167801007:web:6c99341971a773ae5db05a",
+      measurementId: "G-3C6RZ66CPE"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    window.FB = {
+      auth,
+      db,
+      signInAnonymously,
+      collection,
+      addDoc,
+      updateDoc,
+      deleteDoc,
+      doc,
+      setDoc,
+      onSnapshot
+    };
+
+    window.dispatchEvent(new Event('firebase-ready'));
+  </script>
+
+  <!-- Aplicação React -->
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // --- Ícones SVG ---
+    const HomeIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    );
+    const PackageIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+    );
+    const DollarIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    );
+    const HeartIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    );
+    const BagIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+    );
+    const TagIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/></svg>
+    );
+    const PlusIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    );
+    const TrashIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+    );
+    const CheckIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    );
+    const SparkleIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+    );
+    const ClockIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    );
+    const LockIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    );
+
+    const BrandLogo = ({ src, sizeClass = "w-20 h-20" }) => {
+      const [imgError, setImgError] = useState(false);
+
+      useEffect(() => {
+        setImgError(false);
+      }, [src]);
+
+      return (
+        <div className={`${sizeClass} rounded-full border-2 border-[#CFA86A] bg-[#F9F6F0] shadow-md overflow-hidden flex items-center justify-center relative shrink-0`}>
+          {!imgError ? (
+            <img 
+              src={src || "logo.jpg"} 
+              alt="Encanto em Flor" 
+              onError={() => setImgError(true)}
+              className="w-full h-full object-cover" 
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center text-[#2C422E] select-none">
+              <span className="font-serif font-extrabold text-xl leading-none tracking-tighter">EF</span>
+              <span className="text-[8px] uppercase tracking-widest text-[#D9888E] font-bold mt-0.5">Flor</span>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const appId = 'encanto-em-flor-prod';
+
+    function App() {
+      const [fbReady, setFbReady] = useState(!!window.FB);
+      const [user, setUser] = useState(null);
+      const [cloudConnected, setCloudConnected] = useState(false);
+      const [activeTab, setActiveTab] = useState('dashboard');
+
+      const [transactions, setTransactions] = useState([]);
+      const [inventory, setInventory] = useState([]);
+      const [products, setProducts] = useState([]);
+      const [orders, setOrders] = useState([]);
+
+      const [isAppBlocked, setIsAppBlocked] = useState(() => {
+        try { return localStorage.getItem('ef_admin_blocked') === 'true'; } catch { return false; }
+      });
+
+      const [inWelcomeScreen, setInWelcomeScreen] = useState(() => {
+        try { return localStorage.getItem('ef_skip_welcome') !== 'true'; } catch { return true; }
+      });
+
+      const [showAdminModal, setShowAdminModal] = useState(false);
+      const [adminPass, setAdminPass] = useState('');
+
+      const [logoImg, setLogoImg] = useState(() => {
+        try { return localStorage.getItem('ef_client_custom_logo') || 'logo.jpg'; } catch { return 'logo.jpg'; }
+      });
+
+      useEffect(() => {
+        if (window.FB) {
+          setFbReady(true);
+          return;
+        }
+        const handler = () => setFbReady(true);
+        window.addEventListener('firebase-ready', handler);
+        return () => window.removeEventListener('firebase-ready', handler);
+      }, []);
+
+      useEffect(() => {
+        if (!fbReady || !window.FB) return;
+        const { auth, signInAnonymously } = window.FB;
+        signInAnonymously(auth)
+          .then(res => {
+            setUser(res.user);
+            setCloudConnected(true);
+          })
+          .catch(() => {
+            setUser({ uid: 'local-user' });
+          });
+      }, [fbReady]);
+
+      useEffect(() => {
+        if (!user) return;
+
+        try {
+          setTransactions(JSON.parse(localStorage.getItem('ef_trans') || '[]'));
+          setInventory(JSON.parse(localStorage.getItem('ef_inv') || '[]'));
+          setProducts(JSON.parse(localStorage.getItem('ef_prod') || '[]'));
+          setOrders(JSON.parse(localStorage.getItem('ef_orders') || '[]'));
+        } catch (e) {}
+
+        if (!window.FB || user.uid === 'local-user') return;
+        const { db, collection, onSnapshot } = window.FB;
+        const basePath = ['artifacts', appId, 'public', 'data'];
+
+        const unsubTrans = onSnapshot(collection(db, ...basePath, 'transactions'), (snap) => {
+          const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          setTransactions(list);
+          localStorage.setItem('ef_trans', JSON.stringify(list));
+        });
+
+        const unsubInv = onSnapshot(collection(db, ...basePath, 'inventory'), (snap) => {
+          const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          setInventory(list);
+          localStorage.setItem('ef_inv', JSON.stringify(list));
+        });
+
+        const unsubProd = onSnapshot(collection(db, ...basePath, 'products'), (snap) => {
+          const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          setProducts(list);
+          localStorage.setItem('ef_prod', JSON.stringify(list));
+        });
+
+        const unsubOrders = onSnapshot(collection(db, ...basePath, 'orders'), (snap) => {
+          const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          setOrders(list);
+          localStorage.setItem('ef_orders', JSON.stringify(list));
+        });
+
+        const unsubAdmin = onSnapshot(collection(db, ...basePath, 'admin_config'), (snap) => {
+          const statusDoc = snap.docs.find(d => d.id === 'status');
+          if (statusDoc) {
+            const blocked = !!statusDoc.data().blocked;
+            setIsAppBlocked(blocked);
+            localStorage.setItem('ef_admin_blocked', blocked ? 'true' : 'false');
+          }
+        });
+
+        return () => {
+          unsubTrans();
+          unsubInv();
+          unsubProd();
+          unsubOrders();
+          unsubAdmin();
+        };
+      }, [user]);
+
+      const toggleBlockStatus = async (shouldBlock) => {
+        setIsAppBlocked(shouldBlock);
+        localStorage.setItem('ef_admin_blocked', shouldBlock ? 'true' : 'false');
+        try {
+          if (window.FB && user && user.uid !== 'local-user') {
+            const { db, doc, setDoc } = window.FB;
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admin_config', 'status'), {
+              blocked: shouldBlock,
+              updatedAt: new Date().toISOString()
+            }, { merge: true });
+          }
+        } catch (e) {}
+      };
+
+      const saveData = async (colName, data, id = null) => {
+        try {
+          if (window.FB && user && user.uid !== 'local-user') {
+            const { db, collection, addDoc, updateDoc, doc } = window.FB;
+            if (id && !id.startsWith('local_')) {
+              await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', colName, id), data);
+            } else {
+              await addDoc(collection(db, 'artifacts', appId, 'public', 'data', colName), data);
+            }
+            return;
+          }
+        } catch (e) {}
+
+        const keyMap = { transactions: 'ef_trans', inventory: 'ef_inv', products: 'ef_prod', orders: 'ef_orders' };
+        const lKey = keyMap[colName];
+        let current = JSON.parse(localStorage.getItem(lKey) || '[]');
+        if (id) {
+          current = current.map(item => item.id === id ? { ...item, ...data } : item);
+        } else {
+          current.push({ id: 'local_' + Date.now(), ...data });
+        }
+        localStorage.setItem(lKey, JSON.stringify(current));
+        if (colName === 'transactions') setTransactions(current);
+        if (colName === 'inventory') setInventory(current);
+        if (colName === 'products') setProducts(current);
+        if (colName === 'orders') setOrders(current);
+      };
+
+      const deleteData = async (colName, id) => {
+        try {
+          if (window.FB && user && user.uid !== 'local-user' && !id.startsWith('local_')) {
+            const { db, deleteDoc, doc } = window.FB;
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', colName, id));
+            return;
+          }
+        } catch (e) {}
+
+        const keyMap = { transactions: 'ef_trans', inventory: 'ef_inv', products: 'ef_prod', orders: 'ef_orders' };
+        const lKey = keyMap[colName];
+        let current = JSON.parse(localStorage.getItem(lKey) || '[]');
+        current = current.filter(item => item.id !== id);
+        localStorage.setItem(lKey, JSON.stringify(current));
+        if (colName === 'transactions') setTransactions(current);
+        if (colName === 'inventory') setInventory(current);
+        if (colName === 'products') setProducts(current);
+        if (colName === 'orders') setOrders(current);
+      };
+
+      const handleLogoUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 300;
+            canvas.height = 300;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, 300, 300);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            setLogoImg(dataUrl);
+            try { localStorage.setItem('ef_client_custom_logo', dataUrl); } catch (err) {}
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+
+      const [currentMonth, setCurrentMonth] = useState(new Date().toISOString().slice(0, 7));
+
+      const { globalSaldo, monthEntradas, monthSaidas, monthLucro } = useMemo(() => {
+        let gEntradas = 0, gSaidas = 0, mEntradas = 0, mSaidas = 0;
+        transactions.forEach(t => {
+          const val = Number(t.amount || 0);
+          if (t.type === 'entrada') {
+            gEntradas += val;
+            if (!t.monthString || t.monthString === currentMonth) mEntradas += val;
+          } else if (t.type === 'saida') {
+            gSaidas += val;
+            if (!t.monthString || t.monthString === currentMonth) mSaidas += val;
+          }
+        });
+        return {
+          globalSaldo: gEntradas - gSaidas,
+          monthEntradas: mEntradas,
+          monthSaidas: mSaidas,
+          monthLucro: mEntradas - mSaidas
+        };
+      }, [transactions, currentMonth]);
+
+      const formatCurrency = (val) => {
+        return Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      };
+
+      const AdminModalContent = () => {
+        const [clientList, setClientList] = useState(() => {
+          try { return JSON.parse(localStorage.getItem('ef_admin_clients') || '[]'); } catch { return []; }
+        });
+        const [newCName, setNewCName] = useState('');
+        const [newCDate, setNewCDate] = useState(new Date().toISOString().slice(0, 10));
+
+        const addClient = () => {
+          if (!newCName) return;
+          const updated = [...clientList, { id: Date.now(), name: newCName, deliveryDate: newCDate }];
+          setClientList(updated);
+          localStorage.setItem('ef_admin_clients', JSON.stringify(updated));
+          setNewCName('');
+        };
+
+        const removeClient = (id) => {
+          const updated = clientList.filter(c => c.id !== id);
+          setClientList(updated);
+          localStorage.setItem('ef_admin_clients', JSON.stringify(updated));
+        };
+
+        return (
+          <div className="space-y-4 pt-2">
+            <div className="bg-[#FDFBF7] p-4 rounded-2xl border border-[#CFA86A]/30 space-y-2 text-center">
+              <h4 className="text-xs font-bold text-[#2C422E] uppercase">🌸 Logo da Loja</h4>
+              <div className="flex items-center justify-center gap-3 pt-1">
+                <BrandLogo src={logoImg} sizeClass="w-12 h-12" />
+                <label className="bg-[#2C422E] text-white px-4 py-2 rounded-xl text-xs font-bold cursor-pointer shadow-sm hover:opacity-90">
+                  Substituir Logo
+                  <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                </label>
+                {logoImg !== 'logo.jpg' && (
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('ef_client_custom_logo');
+                      setLogoImg('logo.jpg');
+                    }}
+                    className="text-[10px] text-gray-500 underline"
+                  >
+                    Restaurar Padrão
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-[#FDFBF7] p-4 rounded-2xl border border-[#CFA86A]/30 space-y-3">
+              <div className="flex justify-between items-center bg-white p-3 rounded-xl border">
+                <span className="text-xs font-bold text-[#2C422E]">Status na Nuvem:</span>
+                <span className={`text-xs font-extrabold px-3 py-1 rounded-full ${isAppBlocked ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'}`}>
+                  {isAppBlocked ? '🔴 BLOQUEADO' : '🟢 LIBERADO'}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => toggleBlockStatus(true)}
+                  className={`py-3 text-white font-bold text-xs rounded-xl shadow-sm ${isAppBlocked ? 'bg-gray-300 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}
+                  disabled={isAppBlocked}
+                >
+                  🔒 Bloquear App
+                </button>
+                <button
+                  onClick={() => toggleBlockStatus(false)}
+                  className={`py-3 text-white font-bold text-xs rounded-xl shadow-sm ${!isAppBlocked ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#4A634D] hover:bg-green-800'}`}
+                  disabled={!isAppBlocked}
+                >
+                  🔓 Liberar App
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-[#FDFBF7] p-4 rounded-2xl border border-[#CFA86A]/30 space-y-3">
+              <h4 className="text-xs font-bold text-[#2C422E] uppercase">📅 Controle de Mensalidade</h4>
+              <div className="space-y-2">
+                <div className="flex gap-1.5">
+                  <input type="text" placeholder="Nome da cliente" className="w-1/2 p-2.5 bg-white border rounded-xl text-xs" value={newCName} onChange={e => setNewCName(e.target.value)} />
+                  <input type="date" className="w-1/2 p-2.5 bg-white border rounded-xl text-xs" value={newCDate} onChange={e => setNewCDate(e.target.value)} />
+                </div>
+                <button onClick={addClient} className="w-full py-2 bg-[#2C422E] text-white rounded-xl text-xs font-bold">Adicionar Lembrete</button>
+                <div className="max-h-36 overflow-y-auto space-y-2 pt-1">
+                  {clientList.map(c => {
+                    const delivery = new Date(c.deliveryDate);
+                    const dueDate = new Date(delivery);
+                    dueDate.setMonth(dueDate.getMonth() + 1);
+                    const diffDays = Math.ceil((dueDate - new Date()) / (1000 * 60 * 60 * 24));
+                    const isExpired = diffDays <= 0;
+                    return (
+                      <div key={c.id} className="bg-white p-2.5 rounded-xl border flex justify-between items-center text-xs">
+                        <div>
+                          <strong className="block text-[#2C422E]">{c.name}</strong>
+                          <span className={`block text-[10px] font-bold ${isExpired ? 'text-red-600' : 'text-[#4A634D]'}`}>
+                            {isExpired ? '⚠️ Vencido!' : `Vence em ${diffDays} dias`}
+                          </span>
+                        </div>
+                        <button onClick={() => removeClient(c.id)} className="text-gray-300 hover:text-red-500 p-1"><TrashIcon /></button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const renderAdminModal = () => (
+        showAdminModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-5">
+            <div className="bg-white text-gray-800 p-6 rounded-3xl w-full max-w-md space-y-4 shadow-2xl border max-h-[90vh] overflow-y-auto text-left">
+              <div className="flex justify-between items-center">
+                <h3 className="font-serif font-bold text-lg text-[#2C422E]">Painel Administrativo</h3>
+                <button onClick={() => setShowAdminModal(false)} className="text-gray-400 hover:text-gray-600 font-bold text-sm px-2 py-1">✕</button>
+              </div>
+              <input
+                type="password"
+                placeholder="Digite a senha de acesso"
+                className="w-full p-3.5 bg-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#CFA86A]"
+                value={adminPass}
+                onChange={e => setAdminPass(e.target.value)}
+              />
+              {adminPass === 'Heitor-13' ? (
+                <AdminModalContent />
+              ) : (
+                <button
+                  onClick={() => { if (adminPass !== 'Heitor-13') alert('Senha incorreta!'); }}
+                  className="w-full py-3 bg-gray-200 text-gray-600 font-bold text-xs rounded-2xl hover:bg-gray-300 transition"
+                >
+                  Validar Senha
+                </button>
+              )}
+            </div>
+          </div>
+        )
+      );
+
+      if (isAppBlocked) {
+        return (
+          <div className="min-h-screen bg-[#2C422E] flex flex-col items-center justify-center p-6 text-center font-sans relative text-white">
+            <div className="max-w-md w-full flex flex-col items-center">
+              <div
+                onClick={() => {
+                  const now = Date.now();
+                  window._lockClicks = window._lockClicks || [];
+                  window._lockClicks.push(now);
+                  window._lockClicks = window._lockClicks.filter(t => now - t < 2000);
+                  if (window._lockClicks.length >= 5) {
+                    window._lockClicks = [];
+                    setShowAdminModal(true);
+                  }
+                }}
+                className="w-20 h-20 bg-[#D9888E]/25 rounded-full flex items-center justify-center mb-5 text-[#D9888E] cursor-pointer select-none active:scale-95 transition-transform"
+              >
+                <LockIcon />
+              </div>
+              <h1 className="text-3xl font-serif font-bold mb-3">Acesso Temporariamente Suspenso</h1>
+              <p className="text-sm text-gray-300 leading-relaxed mb-6">
+                O acesso a este aplicativo foi pausado devido a pendência na renovação da mensalidade. Entre em contato para regularizar o acesso.
+              </p>
+            </div>
+            {renderAdminModal()}
+          </div>
+        );
+      }
+
+      if (inWelcomeScreen) {
+        return (
+          <div className="min-h-screen bg-[#F9F6F0] flex flex-col items-center justify-between p-6 md:p-10 text-center font-sans relative">
+            <div className="w-full max-w-4xl flex justify-between items-center pt-2">
+              <span className="text-[11px] font-bold text-[#4A634D] bg-white/80 px-3 py-1.5 rounded-full border border-[#CFA86A]/30">
+                {cloudConnected ? '☁️ Nuvem Conectada' : '🌸 Modo Local / Pronto'}
+              </span>
+              <button
+                onClick={() => setShowAdminModal(true)}
+                className="bg-[#2C422E] text-[#CFA86A] text-xs font-bold px-4 py-2 rounded-xl shadow-md flex items-center gap-1.5 border border-[#CFA86A]/40 hover:opacity-95"
+              >
+                <LockIcon /> <span>Admin</span>
+              </button>
+            </div>
+
+            <div className="flex flex-col items-center space-y-6 my-auto max-w-md">
+              <BrandLogo src={logoImg} sizeClass="w-36 h-36 md:w-44 md:h-44 shadow-xl border-4" />
+              <div>
+                <h1 className="text-4xl md:text-5xl font-serif font-extrabold text-[#2C422E]">Encanto em Flor</h1>
+                <p className="text-[#D9888E] text-xs font-bold uppercase tracking-[0.25em] mt-2">GESTÃO PREMIUM</p>
+              </div>
+              <p className="text-gray-500 text-sm md:text-base leading-relaxed">
+                Seu espaço exclusivo para organizar encomendas, estoque e finanças do seu ateliê com praticidade.
+              </p>
+            </div>
+
+            <div className="w-full max-w-sm pb-6">
+              <button
+                onClick={() => {
+                  try { localStorage.setItem('ef_skip_welcome', 'true'); } catch (e) {}
+                  setInWelcomeScreen(false);
+                }}
+                className="w-full py-4 bg-[#2C422E] text-[#FDFBF7] font-bold rounded-2xl shadow-xl text-base tracking-wide hover:bg-[#384F3B] transition-all cursor-pointer"
+              >
+                Acessar Painel 🌸
+              </button>
+            </div>
+
+            {renderAdminModal()}
+          </div>
+        );
+      }
+
+      const Dashboard = () => {
+        const [monthInput, setMonthInput] = useState(currentMonth);
+        const [isAddingExpense, setIsAddingExpense] = useState(false);
+        const [quickAmount, setQuickAmount] = useState('');
+        const [quickDesc, setQuickDesc] = useState('');
+        const [showMonthExpenses, setShowMonthExpenses] = useState(false);
+
+        const handleMonthChange = (e) => {
+          setMonthInput(e.target.value);
+          setCurrentMonth(e.target.value);
+        };
+
+        const handleQuickExpense = async (e) => {
+          e.preventDefault();
+          if (!quickAmount || Number(quickAmount) <= 0) return;
+          const dateString = new Date().toISOString();
+          const ptDate = new Date().toLocaleDateString('pt-BR');
+
+          await saveData('transactions', {
+            type: 'saida',
+            category: 'material',
+            description: quickDesc.trim() || 'Gasto / Compra de Material',
+            amount: Number(quickAmount),
+            date: ptDate,
+            monthString: currentMonth || dateString.slice(0, 7)
+          });
+
+          setIsAddingExpense(false);
+          setQuickAmount('');
+          setQuickDesc('');
+          setShowMonthExpenses(true);
+        };
+
+        const formatMonthYear = (yyyyMM) => {
+          if (!yyyyMM) return '';
+          const [year, month] = yyyyMM.split('-');
+          const date = new Date(Number(year), Number(month) - 1);
+          return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).replace(' de ', '/');
+        };
+
+        const todayPt = new Date().toLocaleDateString('pt-BR');
+        const todayOrders = orders.filter(o => o.date === todayPt && o.status === 'pendente');
+        const monthExpensesList = transactions.filter(t => t.type === 'saida' && t.monthString === currentMonth);
+
+        const isOrderExpense = (t) => t.category === 'pedido' || (t.description && t.description.startsWith('Custo Peça'));
+        const orderExpensesList = monthExpensesList.filter(isOrderExpense);
+        const materialExpensesList = monthExpensesList.filter(t => !isOrderExpense(t));
+
+        return (
+          <div className="space-y-6">
+            {todayOrders.length > 0 && (
+              <div
+                onClick={() => setActiveTab('pedidos')}
+                className="cursor-pointer bg-gradient-to-r from-[#2C422E] to-[#384F3B] text-white p-4 rounded-3xl shadow-md flex items-center justify-between border border-[#CFA86A]/40 hover:opacity-95 transition"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="bg-[#CFA86A]/20 p-2.5 rounded-2xl text-[#CFA86A]"><ClockIcon /></div>
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#CFA86A]">Agenda de Hoje ({todayPt})</h4>
+                    <p className="text-sm font-medium mt-0.5">Você tem <strong>{todayOrders.length} pedido(s)</strong> pendente(s) hoje!</p>
+                  </div>
+                </div>
+                <span className="text-xs bg-white/10 px-3 py-1.5 rounded-xl font-bold">Ver →</span>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center bg-white/80 backdrop-blur-md p-3.5 rounded-2xl border border-[#CFA86A]/20 shadow-sm">
+              <span className="text-[#2C422E] font-serif font-bold pl-2 text-sm md:text-base">Mês de Referência:</span>
+              <input
+                type="month"
+                value={monthInput}
+                onChange={handleMonthChange}
+                className="bg-[#F9F6F0] border border-gray-200 text-[#2C422E] text-sm font-semibold rounded-xl px-3 py-2 outline-none focus:border-[#CFA86A]"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-[#FDFBF7] rounded-[2rem] p-6 text-[#2C422E] shadow-sm border border-[#CFA86A]/40 text-center flex flex-col justify-center">
+                <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1.5 flex items-center justify-center gap-1.5">
+                  <SparkleIcon /> Saldo Total (Caixa)
+                </p>
+                <h2 className="text-3xl lg:text-4xl font-serif font-bold text-[#2C422E]">{formatCurrency(globalSaldo)}</h2>
+                <p className="text-[#CFA86A] text-[11px] font-bold tracking-wide mt-2">Acumulado disponível</p>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-1 gap-3">
+                <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 text-center flex flex-col justify-center">
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1 block">Entradas no Mês</span>
+                  <span className="text-[#4A634D] font-bold text-xl">{formatCurrency(monthEntradas)}</span>
+                </div>
+                <div
+                  onClick={() => setShowMonthExpenses(!showMonthExpenses)}
+                  className="cursor-pointer bg-white p-4 rounded-3xl shadow-sm border border-gray-100 text-center flex flex-col justify-center hover:border-[#D9888E]/50 transition"
+                >
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1 block">Gastos no Mês</span>
+                  <span className="text-[#D9888E] font-bold text-xl">{formatCurrency(monthSaidas)}</span>
+                  <span className="text-[10px] text-[#D9888E] font-semibold mt-1 block underline">
+                    {showMonthExpenses ? 'Ocultar ▲' : 'Ver detalhes ▼'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-[#FDFBF7] to-white p-6 rounded-[2rem] shadow-sm border border-[#CFA86A]/40 text-center flex flex-col justify-center">
+                <span className="text-xs text-[#CFA86A] font-bold uppercase tracking-widest mb-1.5 flex items-center justify-center gap-1">
+                  <HeartIcon /> Lucro Limpo
+                </span>
+                <h3 className="text-3xl font-serif font-bold text-[#CFA86A]">{formatCurrency(monthLucro)}</h3>
+                <p className="text-gray-400 text-[11px] font-medium mt-2">Resultado em {formatMonthYear(currentMonth)}</p>
+              </div>
+            </div>
+
+            <div>
+              {!isAddingExpense ? (
+                <button
+                  onClick={() => setIsAddingExpense(true)}
+                  className="w-full py-3.5 px-6 rounded-2xl text-xs font-bold border border-[#D9888E]/40 bg-white text-[#D9888E] hover:bg-[#D9888E] hover:text-white transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                >
+                  <span className="text-base leading-none font-bold">-</span>
+                  <span>Anotar Gasto Rápido</span>
+                </button>
+              ) : (
+                <form onSubmit={handleQuickExpense} className="bg-white p-5 rounded-3xl shadow-md border border-[#D9888E]/40 space-y-3">
+                  <div className="flex justify-between items-center px-1">
+                    <p className="text-xs font-bold text-[#2C422E]">💸 Registrar Despesa Rápida</p>
+                    <button type="button" onClick={() => setIsAddingExpense(false)} className="text-xs text-gray-400 font-bold hover:text-gray-600">Fechar ✕</button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <input
+                      type="text"
+                      placeholder="O que comprou? (opcional)"
+                      className="p-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none focus:border-[#D9888E]"
+                      value={quickDesc}
+                      onChange={e => setQuickDesc(e.target.value)}
+                    />
+                    <input
+                      required
+                      autoFocus
+                      type="number"
+                      step="0.01"
+                      placeholder="Valor R$ 0,00"
+                      className="p-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold text-[#2C422E] outline-none focus:border-[#D9888E]"
+                      value={quickAmount}
+                      onChange={e => setQuickAmount(e.target.value)}
+                    />
+                    <button type="submit" className="py-3.5 bg-[#D9888E] text-white rounded-2xl text-xs font-bold shadow-md hover:opacity-95 cursor-pointer">
+                      Descontar do Caixa
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+
+            {showMonthExpenses && (
+              <div className="bg-white p-5 rounded-3xl shadow-sm border border-[#D9888E]/30 space-y-5">
+                <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                  <h4 className="text-xs font-serif font-bold text-[#2C422E] uppercase">📋 Detalhamento de {formatMonthYear(currentMonth)}</h4>
+                  <span className="text-xs font-bold text-[#D9888E]">Total: {formatCurrency(monthSaidas)}</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-bold text-[#D9888E] uppercase">🛍️ Compras de Material</span>
+                    {materialExpensesList.length === 0 && <p className="text-xs text-gray-400">Nenhum gasto lançado.</p>}
+                    {materialExpensesList.map(exp => (
+                      <div key={exp.id} className="flex justify-between items-center bg-[#FDFBF7] p-3 rounded-2xl border text-xs">
+                        <div>
+                          <span className="font-bold text-[#2C422E] block">{exp.description}</span>
+                          <span className="text-[10px] text-gray-400">{exp.date}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-[#D9888E]">- {formatCurrency(exp.amount)}</span>
+                          <button onClick={() => deleteData('transactions', exp.id)} className="text-gray-300 hover:text-red-500"><TrashIcon /></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-bold text-[#CFA86A] uppercase">🌸 Custo dos Pedidos</span>
+                    {orderExpensesList.length === 0 && <p className="text-xs text-gray-400">Nenhum custo de pedido.</p>}
+                    {orderExpensesList.map(exp => (
+                      <div key={exp.id} className="flex justify-between items-center bg-[#FDFBF7] p-3 rounded-2xl border text-xs">
+                        <div>
+                          <span className="font-bold text-[#2C422E] block">{exp.description}</span>
+                          <span className="text-[10px] text-gray-400">{exp.date}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-[#CFA86A]">- {formatCurrency(exp.amount)}</span>
+                          <button onClick={() => deleteData('transactions', exp.id)} className="text-gray-300 hover:text-red-500"><TrashIcon /></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      };
+
+      const Orders = () => {
+        const [isAdding, setIsAdding] = useState(false);
+        const today = new Date().toISOString().split('T')[0];
+        const [form, setForm] = useState({ clientName: '', whatsapp: '', items: '', time: '', sellPrice: '', status: 'pendente', date: today });
+
+        const handleSave = async (e) => {
+          e.preventDefault();
+          const dateDisplay = form.date.split('-').reverse().join('/');
+          await saveData('orders', {
+            ...form,
+            date: dateDisplay,
+            monthString: form.date.slice(0, 7),
+            sellPrice: Number(form.sellPrice)
+          });
+          setIsAdding(false);
+          setForm({ clientName: '', whatsapp: '', items: '', time: '', sellPrice: '', status: 'pendente', date: today });
+        };
+
+        const handleCompleteOrder = async (order) => {
+          await saveData('orders', { status: 'concluido' }, order.id);
+          await saveData('transactions', {
+            type: 'entrada',
+            category: 'venda',
+            description: `Pedido: ${order.clientName} (${order.items})`,
+            amount: Number(order.sellPrice || 0),
+            date: new Date().toLocaleDateString('pt-BR'),
+            monthString: order.monthString || currentMonth
+          });
+        };
+
+        return (
+          <div>
+            <div className="flex justify-between items-end mb-6">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-serif font-bold text-[#2C422E]">Pedidos</h2>
+                <p className="text-sm text-[#CFA86A] font-medium mt-0.5">Gerenciamento de encomendas.</p>
+              </div>
+              <button onClick={() => setIsAdding(!isAdding)} className="bg-[#D9888E] text-white px-4 py-3 rounded-full shadow-lg flex items-center gap-2 text-xs font-bold cursor-pointer hover:opacity-95">
+                <PlusIcon /> <span className="hidden sm:inline">Novo Pedido</span>
+              </button>
+            </div>
+
+            {isAdding && (
+              <form onSubmit={handleSave} className="bg-white p-5 rounded-[2rem] shadow-xl mb-8 space-y-4 border border-[#CFA86A]/30">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input required type="text" placeholder="Nome da Cliente" className="w-full p-3.5 bg-gray-50 border rounded-2xl text-sm" value={form.clientName} onChange={e => setForm({...form, clientName: e.target.value})} />
+                  <input type="tel" placeholder="WhatsApp (opcional)" className="w-full p-3.5 bg-gray-50 border rounded-2xl text-sm" value={form.whatsapp} onChange={e => setForm({...form, whatsapp: e.target.value})} />
+                </div>
+                <input required type="text" placeholder="Descrição do Pedido (ex: Buquê 12 rosas)" className="w-full p-3.5 bg-gray-50 border rounded-2xl text-sm" value={form.items} onChange={e => setForm({...form, items: e.target.value})} />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <input type="date" className="w-full p-3.5 bg-gray-50 border rounded-2xl text-sm" value={form.date} onChange={e => setForm({...form, date: e.target.value})} />
+                  <input type="time" className="w-full p-3.5 bg-gray-50 border rounded-2xl text-sm" value={form.time} onChange={e => setForm({...form, time: e.target.value})} />
+                  <input required type="number" step="0.01" placeholder="Valor da Venda (R$)" className="w-full p-3.5 bg-gray-50 border rounded-2xl text-sm font-bold" value={form.sellPrice} onChange={e => setForm({...form, sellPrice: e.target.value})} />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button type="button" onClick={() => setIsAdding(false)} className="w-1/2 py-3 bg-gray-100 rounded-2xl font-bold text-xs">Cancelar</button>
+                  <button type="submit" className="w-1/2 py-3 bg-[#D9888E] text-white font-bold rounded-2xl text-xs shadow-md">Salvar Pedido</button>
+                </div>
+              </form>
+            )}
+
+            {orders.length === 0 && (
+              <div className="bg-white/60 p-8 rounded-3xl text-center text-gray-400 text-sm border border-dashed">
+                Nenhum pedido cadastrado ainda. Clique no botão <strong>+</strong> acima para adicionar.
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {orders.map(order => {
+                const isDone = order.status === 'concluido';
+                return (
+                  <div key={order.id} className={`bg-white p-5 rounded-3xl shadow-sm border flex justify-between items-start ${isDone ? 'opacity-70 border-green-200' : 'border-gray-100'}`}>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-[#2C422E] text-lg">{order.clientName}</h3>
+                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${isDone ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {isDone ? 'Entregue' : 'Pendente'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600">{order.items}</p>
+                      <div className="flex flex-wrap items-center gap-3 pt-1">
+                        <span className="text-xs text-gray-400">📅 {order.date} {order.time && `às ${order.time}`}</span>
+                        <span className="text-xs font-extrabold text-[#4A634D]">{formatCurrency(order.sellPrice)}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {!isDone && (
+                        <button
+                          onClick={() => handleCompleteOrder(order)}
+                          title="Concluir e lançar no caixa"
+                          className="bg-[#4A634D] text-white p-2 rounded-xl hover:opacity-90 shadow-sm"
+                        >
+                          <CheckIcon />
+                        </button>
+                      )}
+                      <button onClick={() => deleteData('orders', order.id)} className="text-gray-300 hover:text-red-500 p-1.5"><TrashIcon /></button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      };
+
+      const Products = () => {
+        const [isAdding, setIsAdding] = useState(false);
+        const [form, setForm] = useState({ name: '', costPrice: '', sellPrice: '' });
+
+        const handleSave = async (e) => {
+          e.preventDefault();
+          await saveData('products', { name: form.name, costPrice: Number(form.costPrice || 0), sellPrice: Number(form.sellPrice) });
+          setIsAdding(false);
+          setForm({ name: '', costPrice: '', sellPrice: '' });
+        };
+
+        return (
+          <div>
+            <div className="flex justify-between items-end mb-6">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-serif font-bold text-[#2C422E]">Produtos</h2>
+                <p className="text-sm text-[#CFA86A] font-medium mt-0.5">Catálogo de peças e valores.</p>
+              </div>
+              <button onClick={() => setIsAdding(!isAdding)} className="bg-[#CFA86A] text-white px-4 py-3 rounded-full shadow-lg flex items-center gap-2 text-xs font-bold cursor-pointer">
+                <PlusIcon /> <span className="hidden sm:inline">Novo Produto</span>
+              </button>
+            </div>
+
+            {isAdding && (
+              <form onSubmit={handleSave} className="bg-white p-5 rounded-[2rem] shadow-xl mb-8 space-y-4 border">
+                <input required type="text" placeholder="Nome do Produto / Arranjo" className="w-full p-3.5 bg-gray-50 border rounded-2xl text-sm" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+                <div className="grid grid-cols-2 gap-3">
+                  <input type="number" step="0.01" placeholder="Custo Base (R$)" className="w-full p-3.5 bg-gray-50 border rounded-2xl text-sm" value={form.costPrice} onChange={e => setForm({...form, costPrice: e.target.value})} />
+                  <input required type="number" step="0.01" placeholder="Preço Venda (R$)" className="w-full p-3.5 bg-gray-50 border rounded-2xl text-sm font-bold" value={form.sellPrice} onChange={e => setForm({...form, sellPrice: e.target.value})} />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button type="button" onClick={() => setIsAdding(false)} className="w-1/2 py-3 text-gray-500 font-bold bg-gray-100 rounded-2xl text-xs">Cancelar</button>
+                  <button type="submit" className="w-1/2 py-3 bg-[#CFA86A] text-white font-bold rounded-2xl text-xs">Salvar Produto</button>
+                </div>
+              </form>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {products.map(product => (
+                <div key={product.id} className="bg-white p-5 rounded-3xl shadow-sm border flex justify-between items-center">
+                  <div className="space-y-1.5">
+                    <h3 className="font-bold text-[#2C422E] text-lg">{product.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="bg-[#2C422E] text-white px-3 py-1 rounded-lg text-xs font-bold">Venda: {formatCurrency(product.sellPrice)}</span>
+                      {product.costPrice > 0 && (
+                        <span className="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-lg text-xs font-semibold">Custo: {formatCurrency(product.costPrice)}</span>
+                      )}
+                    </div>
+                  </div>
+                  <button onClick={() => deleteData('products', product.id)} className="text-gray-300 hover:text-red-500 p-2"><TrashIcon /></button>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      };
+
+      const Inventory = () => {
+        const [isAdding, setIsAdding] = useState(false);
+        const [form, setForm] = useState({ name: '', quantity: '', unit: 'unidades', costPrice: '' });
+
+        const handleSave = async (e) => {
+          e.preventDefault();
+          await saveData('inventory', { ...form, costPrice: Number(form.costPrice || 0) });
+          setIsAdding(false);
+          setForm({ name: '', quantity: '', unit: 'unidades', costPrice: '' });
+        };
+
+        return (
+          <div>
+            <div className="flex justify-between items-end mb-6">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-serif font-bold text-[#2C422E]">Estoque</h2>
+                <p className="text-sm text-[#CFA86A] font-medium mt-0.5">Materiais, fitas, papéis e insumos.</p>
+              </div>
+              <button onClick={() => setIsAdding(!isAdding)} className="bg-[#2C422E] text-white px-4 py-3 rounded-full shadow-lg flex items-center gap-2 text-xs font-bold cursor-pointer">
+                <PlusIcon /> <span className="hidden sm:inline">Novo Item</span>
+              </button>
+            </div>
+
+            {isAdding && (
+              <form onSubmit={handleSave} className="bg-white p-5 rounded-[2rem] shadow-xl mb-8 space-y-4 border">
+                <input required type="text" placeholder="Nome do Material" className="w-full p-3.5 bg-gray-50 border rounded-2xl text-sm" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <input required type="number" step="0.01" placeholder="Quantidade" className="w-full p-3.5 bg-gray-50 border rounded-2xl text-sm" value={form.quantity} onChange={e => setForm({...form, quantity: e.target.value})} />
+                  <select value={form.unit} onChange={e => setForm({...form, unit: e.target.value})} className="w-full p-3.5 bg-gray-50 border rounded-2xl text-sm font-bold text-[#2C422E]">
+                    <option value="unidades">Unidades</option>
+                    <option value="metros">Metros</option>
+                    <option value="pacotes">Pacotes</option>
+                    <option value="caixas">Caixas</option>
+                  </select>
+                  <input type="number" step="0.01" placeholder="Custo Total (R$)" className="w-full p-3.5 bg-gray-50 border rounded-2xl text-sm" value={form.costPrice} onChange={e => setForm({...form, costPrice: e.target.value})} />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button type="button" onClick={() => setIsAdding(false)} className="w-1/2 py-3 text-gray-500 font-bold bg-gray-100 rounded-2xl text-xs">Cancelar</button>
+                  <button type="submit" className="w-1/2 py-3 bg-[#2C422E] text-white font-bold rounded-2xl text-xs">Salvar Estoque</button>
+                </div>
+              </form>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {inventory.map(item => (
+                <div key={item.id} className="bg-white p-5 rounded-3xl shadow-sm border flex justify-between items-center">
+                  <div className="space-y-1">
+                    <h3 className="font-bold text-[#2C422E] text-base">{item.name}</h3>
+                    <span className="inline-block bg-[#4A634D]/10 text-[#4A634D] px-3 py-1 rounded-lg text-xs font-bold">
+                      {item.quantity} {item.unit}
+                    </span>
+                  </div>
+                  <button onClick={() => deleteData('inventory', item.id)} className="text-gray-300 hover:text-red-500 p-2"><TrashIcon /></button>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      };
+
+      const Cashflow = () => {
+        const [isAdding, setIsAdding] = useState(false);
+        const [form, setForm] = useState({ type: 'entrada', description: '', amount: '' });
+
+        const handleAdd = async (e) => {
+          e.preventDefault();
+          const dateString = new Date().toISOString();
+          await saveData('transactions', {
+            type: form.type,
+            category: form.type === 'saida' ? 'material' : 'venda',
+            description: form.description,
+            amount: Number(form.amount),
+            date: new Date().toLocaleDateString('pt-BR'),
+            monthString: currentMonth || dateString.slice(0, 7)
+          });
+          setIsAdding(false);
+          setForm({ type: 'entrada', description: '', amount: '' });
+        };
+
+        const monthTrans = transactions.filter(t => !t.monthString || t.monthString === currentMonth);
+
+        return (
+          <div className="space-y-5">
+            <div className="flex justify-between items-end">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-serif font-bold text-[#2C422E]">Fluxo de Caixa</h2>
+                <p className="text-sm text-[#CFA86A] font-medium mt-0.5">Extrato completo de entradas e saídas.</p>
+              </div>
+              <button onClick={() => setIsAdding(!isAdding)} className="bg-[#2C422E] text-white px-4 py-3 rounded-full shadow-lg flex items-center gap-2 text-xs font-bold cursor-pointer">
+                <PlusIcon /> <span className="hidden sm:inline">Novo Lançamento</span>
+              </button>
+            </div>
+
+            {isAdding && (
+              <form onSubmit={handleAdd} className="bg-white p-5 rounded-[2rem] shadow-xl space-y-4 border">
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setForm({...form, type: 'entrada'})} className={`flex-1 py-3 rounded-xl text-xs font-bold ${form.type === 'entrada' ? 'bg-[#4A634D] text-white' : 'bg-gray-100'}`}>+ Entrada</button>
+                  <button type="button" onClick={() => setForm({...form, type: 'saida'})} className={`flex-1 py-3 rounded-xl text-xs font-bold ${form.type === 'saida' ? 'bg-[#D9888E] text-white' : 'bg-gray-100'}`}>- Saída</button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input required type="text" placeholder="Descrição do lançamento" className="w-full p-3.5 bg-gray-50 border rounded-2xl text-sm" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+                  <input required type="number" step="0.01" placeholder="Valor (R$)" className="w-full p-3.5 bg-gray-50 border rounded-2xl text-sm font-bold" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} />
+                </div>
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setIsAdding(false)} className="w-1/2 py-3 bg-gray-100 rounded-2xl font-bold text-xs">Cancelar</button>
+                  <button type="submit" className="w-1/2 py-3 bg-[#2C422E] text-white font-bold rounded-2xl text-xs">Salvar Lançamento</button>
+                </div>
+              </form>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {monthTrans.map(t => (
+                <div key={t.id} className="bg-white p-4 rounded-3xl shadow-sm border flex justify-between items-center">
+                  <div>
+                    <h3 className="font-bold text-[#2C422E] text-sm">{t.description}</h3>
+                    <p className="text-[11px] text-gray-400">{t.date}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`font-extrabold text-base ${t.type === 'entrada' ? 'text-[#4A634D]' : 'text-[#D9888E]'}`}>
+                      {t.type === 'entrada' ? '+' : '-'} {formatCurrency(t.amount)}
+                    </span>
+                    <button onClick={() => deleteData('transactions', t.id)} className="text-gray-300 hover:text-red-500"><TrashIcon /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      };
+
+      const navItems = [
+        { id: 'dashboard', icon: <HomeIcon />, label: 'Resumo' },
+        { id: 'pedidos', icon: <BagIcon />, label: 'Pedidos' },
+        { id: 'produtos', icon: <TagIcon />, label: 'Produtos' },
+        { id: 'estoque', icon: <PackageIcon />, label: 'Estoque' },
+        { id: 'caixa', icon: <DollarIcon />, label: 'Caixa' }
+      ];
+
+      return (
+        <div className="min-h-screen bg-[#F9F6F0] font-sans text-gray-800 w-full relative pb-28 md:pb-12">
+          <header className="relative z-40 bg-[#F9F6F0]/95 backdrop-blur-xl pt-6 pb-5 px-4 md:px-8 border-b border-[#CFA86A]/25 shadow-sm rounded-b-[2rem] md:rounded-none">
+            <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="w-full md:w-auto flex items-center justify-between md:justify-start gap-4">
+                <button
+                  onClick={() => setInWelcomeScreen(true)}
+                  className="bg-white border border-[#CFA86A]/30 text-[#2C422E] text-xs font-bold px-3 py-2 rounded-xl shadow-sm hover:bg-gray-50"
+                >
+                  ← Início
+                </button>
+
+                <div className="flex items-center gap-3">
+                  <BrandLogo src={logoImg} sizeClass="w-14 h-14 md:w-16 md:h-16" />
+                  <div className="text-left">
+                    <h1 className="font-serif text-xl md:text-2xl font-extrabold text-[#2C422E] leading-tight">Encanto em Flor</h1>
+                    <p className="text-[#D9888E] text-[10px] font-bold uppercase tracking-[0.2em]">Gestão Premium</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setShowAdminModal(true)}
+                  className="md:hidden bg-[#2C422E] text-[#CFA86A] text-xs font-bold px-3 py-2 rounded-xl shadow-sm flex items-center gap-1"
+                >
+                  <LockIcon /> Admin
+                </button>
+              </div>
+
+              <nav className="hidden md:flex items-center gap-2 bg-white/80 p-1.5 rounded-2xl border border-[#CFA86A]/25 shadow-sm">
+                {navItems.map(tab => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        isActive ? 'bg-[#2C422E] text-white shadow-sm' : 'text-gray-600 hover:bg-[#F9F6F0]'
+                      }`}
+                    >
+                      {tab.icon}
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+
+              <button
+                onClick={() => setShowAdminModal(true)}
+                className="hidden md:flex bg-[#2C422E] text-[#CFA86A] text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm items-center gap-1.5 hover:opacity-95 cursor-pointer"
+              >
+                <LockIcon /> Admin
+              </button>
+            </div>
+          </header>
+
+          {renderAdminModal()}
+
+          <main className="relative z-10 max-w-5xl mx-auto px-4 md:px-8 pt-6">
+            {activeTab === 'dashboard' && <Dashboard />}
+            {activeTab === 'pedidos' && <Orders />}
+            {activeTab === 'produtos' && <Products />}
+            {activeTab === 'estoque' && <Inventory />}
+            {activeTab === 'caixa' && <Cashflow />}
+          </main>
+
+          <div className="md:hidden fixed bottom-5 left-0 right-0 z-50 px-3 flex justify-center">
+            <nav className="w-full max-w-[400px] bg-[#1A261B]/95 backdrop-blur-2xl rounded-full shadow-2xl flex justify-between p-2 items-center border border-white/10">
+              {navItems.map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`relative flex flex-col items-center justify-center w-[3.3rem] h-[3.3rem] rounded-full transition-all duration-300 ${isActive ? 'text-white' : 'text-gray-400'}`}
+                  >
+                    {isActive && (
+                      <div className={`absolute inset-0 rounded-full ${tab.id === 'pedidos' ? 'bg-[#D9888E]' : tab.id === 'produtos' ? 'bg-[#CFA86A]' : 'bg-[#2C422E]'}`}></div>
+                    )}
+                    <div className={`relative z-10 ${isActive ? '-translate-y-0.5' : ''}`}>{tab.icon}</div>
+                    <span className={`relative z-10 text-[8px] font-bold ${isActive ? 'opacity-100 mt-0.5' : 'opacity-0 h-0 overflow-hidden'}`}>
+                      {tab.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
